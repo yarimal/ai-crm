@@ -1,0 +1,152 @@
+.wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #dadce0;
+  background-color: #ffffff;
+  gap: 16px;
+}
+
+.backButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5f6368;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: #f1f3f4;
+}
+
+.dateSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.monthYear {
+  font-size: 12px;
+  color: #5f6368;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dayName {
+  font-size: 13px;
+  color: #1a73e8;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.dayNumber {
+  font-size: 32px;
+  font-weight: 400;
+  color: #202124;
+  line-height: 1;
+}
+
+.dayNumberToday {
+  background-color: #1a73e8;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.addButton:hover {
+  background-color: #1557b0;
+}
+
+.calendarWrapper {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Event Content Styles */
+.eventContent {
+  padding: 4px 8px;
+  height: 100%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.eventTitle {
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventTime {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.eventDescription {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .addButton span {
+    display: none;
+  }
+  
+  .addButton {
+    padding: 12px;
+    border-radius: 50%;
+  }
+  
+  .header {
+    padding: 12px 16px;
+  }
+}
