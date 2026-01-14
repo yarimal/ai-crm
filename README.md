@@ -224,27 +224,6 @@ Required variables (see `.env.example` for complete list):
 | `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:3000` |
 | `VITE_API_BASE_URL` | Frontend API base URL | `http://localhost:8000/api` |
 
-## Security Considerations
-
-This is a development/portfolio project. For production deployment, implement:
-
-- User authentication and authorization (JWT tokens)
-- Rate limiting on API endpoints
-- Input sanitization and validation
-- HTTPS/TLS encryption
-- Database connection pooling
-- Environment-specific CORS policies
-- API key rotation and secrets management
-- Audit logging
-
-## Known Limitations
-
-- No user authentication system
-- No email/SMS notification system
-- No multi-tenancy support
-- Limited mobile responsiveness
-- AI responses depend on Gemini API availability
-- PostgreSQL required for full functionality (tests use SQLite)
 
 ## Troubleshooting
 
