@@ -1,0 +1,98 @@
+.realtimeSection {
+  margin-bottom: 30px;
+}
+
+.realtimeSection h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.realtimeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.realtimeCard {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #4CAF50;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.realtimeCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.realtimeCard h3 {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.realtimeValue {
+  font-size: 40px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.realtimeLabel {
+  font-size: 13px;
+  color: #999;
+}
+
+.currentAppointment {
+  border-left-color: #FF9800;
+  background: linear-gradient(135deg, #fff 0%, #fff8f0 100%);
+}
+
+.nextAppointment {
+  border-left-color: #2196F3;
+  background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%);
+}
+
+.appointmentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appointmentTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.appointmentDetails {
+  font-size: 14px;
+  color: #666;
+}
+
+.timeRemaining,
+.timeUntil {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FF9800;
+  margin-top: 5px;
+}
+
+.timeUntil {
+  color: #2196F3;
+}
+
+@media (max-width: 768px) {
+  .realtimeCards {
+    grid-template-columns: 1fr;
+  }
+
+  .realtimeValue {
+    font-size: 32px;
+  }
+}

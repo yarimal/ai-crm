@@ -11,6 +11,13 @@ This CRM system combines traditional appointment scheduling with modern AI techn
 - **AI Scheduling Assistant**: Natural language processing for appointment booking using Google Gemini API with function calling
 - **Voice Interface**: Browser-based speech recognition and text-to-speech synthesis
 - **Interactive Calendar**: Visual scheduling with month and day views, drag-and-drop support
+- **Real-time Analytics Dashboard**: Live metrics with auto-refresh including:
+  - Overview cards (total appointments, completion rate, average duration, no-show rate, upcoming count)
+  - Live updates (today's appointments, occupancy rate, current/next appointment with countdown)
+  - Appointments over time trend chart (line graph)
+  - Appointments by provider distribution (bar chart with unique colors)
+  - Appointments by status breakdown (pie chart and detailed table)
+  - Provider-based filtering across all analytics
 - **Conflict Detection**: Automatic validation against existing appointments and blocked times
 - **Provider Management**: Multi-provider support with specialty tracking and working hours
 - **Client Management**: Comprehensive client information and appointment history
@@ -30,8 +37,10 @@ This CRM system combines traditional appointment scheduling with modern AI techn
 - **Framework**: React 19
 - **Build Tool**: Vite
 - **Calendar**: FullCalendar library
+- **Charts**: Recharts (line, bar, pie charts)
 - **API Client**: Fetch with centralized configuration
 - **Testing**: Vitest with React Testing Library
+- **Architecture**: Component-based with CSS modules
 
 ### Infrastructure
 - **Containerization**: Docker and Docker Compose
@@ -63,8 +72,16 @@ my-crm-app/
 │   │   │   ├── calendar/
 │   │   │   ├── clients/
 │   │   │   ├── providers/
+│   │   │   ├── dashboard/    # Analytics components
+│   │   │   │   ├── DashboardHeader.jsx
+│   │   │   │   ├── OverviewCards.jsx
+│   │   │   │   ├── LiveMetrics.jsx
+│   │   │   │   └── ChartsSection.jsx
+│   │   │   ├── pages/
+│   │   │   │   └── Dashboard.jsx
 │   │   │   └── ai/
 │   │   ├── services/         # API service layer
+│   │   │   └── analyticsService.js
 │   │   ├── config/           # Configuration management
 │   │   └── tests/            # Vitest test suites
 │   ├── package.json
@@ -182,15 +199,29 @@ Once the backend is running, interactive API documentation is available at:
 
 ### Key Endpoints
 
+**Provider Management**
 - `POST /api/providers` - Create provider
 - `GET /api/providers` - List providers
 - `PUT /api/providers/{id}` - Update provider
 - `DELETE /api/providers/{id}` - Delete provider (soft delete)
+
+**Client Management**
 - `POST /api/clients` - Create client
 - `GET /api/clients` - List clients with search
+
+**Appointment Management**
 - `POST /api/appointments` - Create appointment
 - `GET /api/appointments` - List appointments with filters
 - `POST /api/blocked-times` - Create blocked time
+
+**Analytics**
+- `GET /api/analytics/overview?start_date={date}&end_date={date}&provider_id={uuid}` - Overview metrics
+- `GET /api/analytics/appointments-over-time?start_date={date}&end_date={date}&provider_id={uuid}` - Trend data
+- `GET /api/analytics/appointments-by-provider?start_date={date}&end_date={date}` - Provider distribution
+- `GET /api/analytics/appointments-by-status?start_date={date}&end_date={date}&provider_id={uuid}` - Status breakdown
+- `GET /api/analytics/realtime?provider_id={uuid}` - Live metrics with current/next appointment
+
+**AI Assistant**
 - `POST /api/ai/chat` - AI chat endpoint
 
 ## Architecture Highlights
@@ -200,10 +231,27 @@ Once the backend is running, interactive API documentation is available at:
 Business logic is separated from routing handlers:
 - `ai_functions.py`: AI function implementations (appointment creation, availability checking)
 - `ai_context.py`: Context building for AI prompts
+- `analytics_service.py`: Analytics calculations with provider filtering and time windows
+
+### Component-Based Frontend Architecture
+
+Dashboard is modular with focused, reusable components:
+- `DashboardHeader.jsx`: Provider and date range filters
+- `OverviewCards.jsx`: 5 summary metric cards (total, completion rate, duration, no-show, upcoming)
+- `LiveMetrics.jsx`: Real-time updates with 60-second auto-refresh
+- `ChartsSection.jsx`: 4 visualizations (line trend, provider bars, status pie, breakdown table)
 
 ### Timezone-Aware DateTime Handling
 
-All datetime comparisons use UTC timezone-aware objects to ensure consistency with PostgreSQL.
+All datetime comparisons use UTC timezone-aware objects with 48-hour windows to handle cross-timezone queries without requiring client timezone configuration.
+
+### Real-time Updates
+
+Live metrics refresh every 60 seconds showing:
+- Current appointment with time remaining
+- Next upcoming appointment with countdown
+- Today's appointment count and occupancy rate
+- Provider-filtered views
 
 ### Centralized Configuration
 
@@ -226,25 +274,7 @@ Required variables (see `.env.example` for complete list):
 
 ## Security Considerations
 
-This is a development/portfolio project. For production deployment, implement:
-
-- User authentication and authorization (JWT tokens)
-- Rate limiting on API endpoints
-- Input sanitization and validation
-- HTTPS/TLS encryption
-- Database connection pooling
-- Environment-specific CORS policies
-- API key rotation and secrets management
-- Audit logging
-
-## Known Limitations
-
-- No user authentication system
-- No email/SMS notification system
-- No multi-tenancy support
-- Limited mobile responsiveness
-- AI responses depend on Gemini API availability
-- PostgreSQL required for full functionality (tests use SQLite)
+This is a development/portfolio project. 
 
 ## Troubleshooting
 

@@ -2,12 +2,21 @@ import React from 'react';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
+  { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
   { id: 'calendar', icon: 'calendar', label: 'Calendar' },
   { id: 'providers', icon: 'users', label: 'Providers' },
   { id: 'clients', icon: 'contacts', label: 'Clients' },
 ];
 
 const icons = {
+  dashboard: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+  ),
   calendar: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

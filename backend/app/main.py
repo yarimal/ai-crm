@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import engine, Base
-from app.routers import providers, clients, appointments, chats, ai, blocked_times
+from app.routers import providers, clients, appointments, chats, ai, blocked_times, analytics
 from app.config import settings
 
 # Import all models (needed for table creation)
@@ -50,6 +50,7 @@ app.include_router(appointments.router, prefix="/api")
 app.include_router(blocked_times.router, prefix="/api")
 app.include_router(chats.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 
 @app.get("/")
@@ -57,7 +58,7 @@ async def root():
     return {
         "name": "AI CRM - Scheduling System",
         "version": "2.0.0",
-        "features": ["providers", "clients", "appointments", "blocked_times", "ai_assistant"],
+        "features": ["providers", "clients", "appointments", "blocked_times", "ai_assistant", "analytics"],
         "docs": "/docs"
     }
 

@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import Calendar from './components/calendar/Calendar';
 import ProvidersPage from './components/pages/ProvidersPage';
 import ClientsPage from './components/pages/ClientsPage';
+import Dashboard from './components/pages/Dashboard';
 import AIChat from './components/chat/AIChat';
 import './styles/App.css';
 
@@ -33,6 +34,8 @@ function App() {
 
   const renderContent = () => {
     switch (activeView) {
+      case 'dashboard':
+        return <Dashboard />;
       case 'providers':
         return <ProvidersPage />;
       case 'clients':
@@ -40,7 +43,7 @@ function App() {
       case 'calendar':
       default:
         return (
-          <Calendar 
+          <Calendar
             refreshTrigger={calendarRefreshTrigger}
             onEventsLoaded={handleEventsLoaded}
             eventToEdit={eventToEdit}
