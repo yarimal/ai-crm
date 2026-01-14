@@ -274,7 +274,7 @@ Required variables (see `.env.example` for complete list):
 
 ## Security Considerations
 
-This is a development/portfolio project. 
+This is a development/portfolio project.
 
 ## Troubleshooting
 
