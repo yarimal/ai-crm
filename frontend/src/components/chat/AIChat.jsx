@@ -8,7 +8,7 @@ const API_BASE = config.apiBaseUrl;
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const speechSynthesis = window.speechSynthesis;
 
-export default function AIChat({ isOpen, onClose, onAppointmentChange }) {
+export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientChange }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -201,12 +201,20 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange }) {
 
       // Notify parent if appointment was created/modified
       if (data.functionCalls?.length > 0) {
-        const hasAppointmentAction = data.functionCalls.some(fc => 
+        const hasAppointmentAction = data.functionCalls.some(fc =>
           ['create_appointment', 'cancel_appointment'].includes(fc.function) &&
           fc.result?.success
         );
         if (hasAppointmentAction && onAppointmentChange) {
           onAppointmentChange();
+        }
+
+        const hasClientAction = data.functionCalls.some(fc =>
+          fc.function === 'create_client' &&
+          fc.result?.success
+        );
+        if (hasClientAction && onClientChange) {
+          onClientChange();
         }
       }
 

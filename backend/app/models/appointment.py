@@ -1,7 +1,7 @@
 """
 Appointment Model - Scheduled meetings between Providers and Clients
 """
-from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey, Enum, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -36,10 +36,14 @@ class Appointment(Base):
     # Links
     provider_id = Column(UUID(as_uuid=True), ForeignKey("providers.id"), nullable=False)
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False)
-    
+    service_id = Column(UUID(as_uuid=True), ForeignKey("services.id"), nullable=True)  # Link to Service model
+
     # Details
-    service_type = Column(String(255), nullable=True)  # Consultation, Checkup, etc.
+    service_type = Column(String(255), nullable=True)  # Consultation, Checkup, etc. (deprecated, use service_id)
     notes = Column(Text, nullable=True)
+
+    # Revenue (copied from service at time of booking for historical accuracy)
+    revenue = Column(Numeric(10, 2), nullable=True)  # Price at time of appointment
     
     # Status
     status = Column(String(20), default=AppointmentStatus.SCHEDULED.value)
@@ -50,7 +54,10 @@ class Appointment(Base):
     # Metadata
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
+    # Relationships
+    service = relationship("Service", backref="appointments")
+
     def __repr__(self):
         return f"<Appointment(id={self.id}, provider={self.provider_id}, client={self.client_id})>"
     
@@ -80,19 +87,23 @@ class Appointment(Base):
             "end": end_str,
             "providerId": str(self.provider_id),
             "clientId": str(self.client_id),
+            "serviceId": str(self.service_id) if self.service_id else None,
             "providerName": provider.get_display_name() if provider else None,
             "clientName": client.name if client else None,
             "serviceType": self.service_type,
             "notes": self.notes,
             "status": self.status,
+            "revenue": float(self.revenue) if self.revenue else None,
             "color": display_color,
             "extendedProps": {
                 "providerId": str(self.provider_id),
                 "clientId": str(self.client_id),
+                "serviceId": str(self.service_id) if self.service_id else None,
                 "providerName": provider.get_display_name() if provider else None,
                 "clientName": client.name if client else None,
                 "serviceType": self.service_type,
                 "status": self.status,
+                "revenue": float(self.revenue) if self.revenue else None,
                 "notes": self.notes
             }
         }

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import engine, Base
-from app.routers import providers, clients, appointments, chats, ai, blocked_times, analytics
+from app.routers import providers, clients, appointments, chats, ai, blocked_times, analytics, services
 from app.config import settings
 
 # Import all models (needed for table creation)
@@ -16,15 +16,16 @@ from app.models.appointment import Appointment
 from app.models.blocked_time import BlockedTime
 from app.models.chat import Chat
 from app.models.message import Message
+from app.models.service import Service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle manager"""
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created")
+    print("Database tables created")
     yield
-    print("👋 Shutting down...")
+    print("Shutting down...")
 
 
 app = FastAPI(
@@ -46,6 +47,7 @@ app.add_middleware(
 # Include routers
 app.include_router(providers.router, prefix="/api")
 app.include_router(clients.router, prefix="/api")
+app.include_router(services.router, prefix="/api")
 app.include_router(appointments.router, prefix="/api")
 app.include_router(blocked_times.router, prefix="/api")
 app.include_router(chats.router, prefix="/api")
@@ -58,7 +60,7 @@ async def root():
     return {
         "name": "AI CRM - Scheduling System",
         "version": "2.0.0",
-        "features": ["providers", "clients", "appointments", "blocked_times", "ai_assistant", "analytics"],
+        "features": ["providers", "clients", "services", "appointments", "blocked_times", "ai_assistant", "analytics"],
         "docs": "/docs"
     }
 

@@ -42,6 +42,7 @@ export default function DayView({ currentDate, events, onAddEvent, onUpdateEvent
       color: event.backgroundColor || event.extendedProps?.color,
       providerId: event.extendedProps?.providerId,
       clientId: event.extendedProps?.clientId,
+      serviceId: event.extendedProps?.serviceId,
       providerName: event.extendedProps?.providerName,
       clientName: event.extendedProps?.clientName,
       serviceType: event.extendedProps?.serviceType,
@@ -61,6 +62,7 @@ export default function DayView({ currentDate, events, onAddEvent, onUpdateEvent
       const appointmentData = {
         provider_id: formData.providerId,
         client_id: formData.clientId,
+        service_id: formData.serviceId || null,
         start: `${dateBase}T${formData.startTime}:00`,
         end: `${dateBase}T${formData.endTime}:00`,
         service_type: formData.serviceType,

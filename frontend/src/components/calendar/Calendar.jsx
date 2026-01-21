@@ -88,10 +88,24 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
 
   // Combine appointments and blocked times for calendar display
   const calendarEvents = useMemo(() => {
-    const appointmentEvents = filteredEvents.map(event => ({
-      ...event,
-      isBlockedTime: false
-    }));
+    const appointmentEvents = filteredEvents.map(event => {
+      // Override color and title for cancelled appointments
+      if (event.status === 'cancelled') {
+        return {
+          ...event,
+          title: `❌ ${event.title}`,
+          color: '#d32f2f',
+          backgroundColor: '#d32f2f',
+          borderColor: '#b71c1c',
+          textColor: '#fff',
+          isBlockedTime: false
+        };
+      }
+      return {
+        ...event,
+        isBlockedTime: false
+      };
+    });
     
     const blockedEvents = filteredBlockedTimes.map(bt => ({
       id: `blocked-${bt.id}`,
@@ -235,6 +249,7 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
           id: editingEvent.id,
           provider_id: formData.providerId,
           client_id: formData.clientId,
+          service_id: formData.serviceId || null,
           start: `${dateBase}T${formData.startTime}:00`,
           end: `${dateBase}T${formData.endTime}:00`,
           service_type: formData.serviceType,
@@ -247,6 +262,7 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
         await addEvent({
           provider_id: formData.providerId,
           client_id: formData.clientId,
+          service_id: formData.serviceId || null,
           start: `${dateBase}T${formData.startTime}:00`,
           end: `${dateBase}T${formData.endTime}:00`,
           service_type: formData.serviceType,
@@ -256,6 +272,7 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
       }
       handleModalClose();
     } catch (err) {
+      console.error('Error in handleModalSave:', err);
       alert('Failed to save. Please try again.');
     }
   };

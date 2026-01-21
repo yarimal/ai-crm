@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { id: 'calendar', icon: 'calendar', label: 'Calendar' },
   { id: 'providers', icon: 'users', label: 'Providers' },
   { id: 'clients', icon: 'contacts', label: 'Clients' },
+  { id: 'services', icon: 'services', label: 'Services' },
 ];
 
 const icons = {
@@ -37,6 +38,12 @@ const icons = {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
+    </svg>
+  ),
+  services: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M16 9h5M16 15h5M4 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+      <path d="M7 15h.01M7 9h4" />
     </svg>
   ),
   ai: (

@@ -18,25 +18,27 @@ const STATUS_OPTIONS = [
   { value: 'no_show', label: 'No Show', color: '#616161' }
 ];
 
-export default function EventModal({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  onDelete, 
-  defaultDate, 
+export default function EventModal({
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  defaultDate,
   editEvent,
-  defaultProviderId 
+  defaultProviderId
 }) {
   const [providers, setProviders] = useState([]);
   const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     providerId: '',
     clientId: '',
     clientName: '',
+    serviceId: '',
     startTime: '09:00',
     endTime: '09:30',
     serviceType: '',
@@ -45,13 +47,20 @@ export default function EventModal({
     color: '#4285f4'
   });
 
-  // Fetch providers and clients
+  // Fetch providers, clients, and services
   useEffect(() => {
     if (isOpen) {
       fetchProviders();
       fetchClients();
     }
   }, [isOpen]);
+
+  // Fetch services when provider changes or modal opens with editEvent
+  useEffect(() => {
+    if (formData.providerId) {
+      fetchServices(formData.providerId);
+    }
+  }, [formData.providerId, isOpen]);
 
   const fetchProviders = async () => {
     try {
@@ -65,7 +74,7 @@ export default function EventModal({
 
   const fetchClients = async (search = '') => {
     try {
-      const url = search 
+      const url = search
         ? `${API_BASE}/clients?search=${encodeURIComponent(search)}`
         : `${API_BASE}/clients`;
       const res = await fetch(url);
@@ -73,6 +82,17 @@ export default function EventModal({
       setClients(data);
     } catch (err) {
       console.error('Failed to fetch clients:', err);
+    }
+  };
+
+  const fetchServices = async (providerId) => {
+    try {
+      const res = await fetch(`${API_BASE}/services?provider_id=${providerId}`);
+      const data = await res.json();
+      setServices(data);
+    } catch (err) {
+      console.error('Failed to fetch services:', err);
+      setServices([]);
     }
   };
 
@@ -87,6 +107,7 @@ export default function EventModal({
         providerId: editEvent.providerId || editEvent.extendedProps?.providerId || '',
         clientId: editEvent.clientId || editEvent.extendedProps?.clientId || '',
         clientName: editEvent.clientName || editEvent.extendedProps?.clientName || editEvent.title || '',
+        serviceId: editEvent.serviceId || editEvent.extendedProps?.serviceId || '',
         startTime: startDate.toTimeString().slice(0, 5),
         endTime: endDate.toTimeString().slice(0, 5),
         serviceType: editEvent.serviceType || editEvent.extendedProps?.serviceType || '',
@@ -105,6 +126,7 @@ export default function EventModal({
         providerId: providerId,
         clientId: '',
         clientName: '',
+        serviceId: '',
         startTime: '09:00',
         endTime: '09:30',
         serviceType: '',
@@ -137,8 +159,34 @@ export default function EventModal({
     setFormData({
       ...formData,
       providerId,
+      serviceId: '', // Reset service when provider changes
       color: provider?.color || '#4285f4'
     });
+  };
+
+  const handleServiceChange = (serviceId) => {
+    const service = services.find(s => s.id === serviceId);
+    if (service) {
+      // Auto-fill duration from service
+      const durationMinutes = service.durationMinutes;
+      const [hours, minutes] = formData.startTime.split(':').map(Number);
+      const startMinutes = hours * 60 + minutes;
+      const endMinutes = startMinutes + durationMinutes;
+      const endHours = Math.floor(endMinutes / 60);
+      const endMins = endMinutes % 60;
+      const endTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
+
+      setFormData({
+        ...formData,
+        serviceId,
+        endTime
+      });
+    } else {
+      setFormData({
+        ...formData,
+        serviceId
+      });
+    }
   };
 
   const handleSubmit = (e) => {
@@ -238,6 +286,33 @@ export default function EventModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Service Selection */}
+          <div className={styles.formGroup}>
+            <label>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M16 9h5M16 15h5M4 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                <path d="M7 15h.01M7 9h4" />
+              </svg>
+              Service (Optional)
+            </label>
+            <select
+              value={formData.serviceId}
+              onChange={(e) => handleServiceChange(e.target.value)}
+              className={styles.select}
+              disabled={!formData.providerId}
+            >
+              <option value="">No service selected</option>
+              {services.map(service => (
+                <option key={service.id} value={service.id}>
+                  {service.name} - ${service.price.toFixed(2)} ({service.durationMinutes} min)
+                </option>
+              ))}
+            </select>
+            {!formData.providerId && (
+              <div className={styles.fieldHint}>Select a provider first to see available services</div>
+            )}
           </div>
 
           {/* Date Display */}

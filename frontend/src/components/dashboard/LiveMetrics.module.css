@@ -5,7 +5,7 @@
 .realtimeSection h2 {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .realtimeCards {
@@ -15,23 +15,24 @@
 }
 
 .realtimeCard {
-  background: white;
+  background: var(--color-bg-primary);
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #4CAF50;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-success);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .realtimeCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
 }
 
 .realtimeCard h3 {
   margin: 0 0 15px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -39,23 +40,23 @@
 .realtimeValue {
   font-size: 40px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-primary);
   margin-bottom: 8px;
 }
 
 .realtimeLabel {
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .currentAppointment {
-  border-left-color: #FF9800;
-  background: linear-gradient(135deg, #fff 0%, #fff8f0 100%);
+  border-left-color: var(--color-warning);
+  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-warning-bg) 100%);
 }
 
 .nextAppointment {
-  border-left-color: #2196F3;
-  background: linear-gradient(135deg, #fff 0%, #f0f7ff 100%);
+  border-left-color: var(--color-info);
+  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-info-bg) 100%);
 }
 
 .appointmentInfo {
@@ -67,24 +68,24 @@
 .appointmentTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .appointmentDetails {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .timeRemaining,
 .timeUntil {
   font-size: 16px;
   font-weight: 600;
-  color: #FF9800;
+  color: var(--color-warning);
   margin-top: 5px;
 }
 
 .timeUntil {
-  color: #2196F3;
+  color: var(--color-info);
 }
 
 @media (max-width: 768px) {

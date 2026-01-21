@@ -155,3 +155,69 @@ def get_realtime_metrics(
     metrics = AnalyticsService.get_realtime_metrics(db, provider_uuid)
 
     return metrics
+
+
+@router.get("/revenue")
+def get_revenue_stats(
+    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
+    provider_id: Optional[str] = Query(None, description="Filter by provider ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get revenue statistics.
+
+    Returns total revenue, completed revenue, pending revenue, average revenue, and revenue trends.
+    """
+    # Default to last 30 days if no dates provided
+    if not end_date:
+        end_date_dt = datetime.now(timezone.utc)
+    else:
+        end_date_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+    if not start_date:
+        start_date_dt = end_date_dt - timedelta(days=30)
+    else:
+        start_date_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+
+    provider_uuid = UUID(provider_id) if provider_id else None
+    data = AnalyticsService.get_revenue_stats(db, start_date_dt, end_date_dt, provider_uuid)
+
+    return {
+        "start_date": start_date_dt.isoformat(),
+        "end_date": end_date_dt.isoformat(),
+        **data
+    }
+
+
+@router.get("/service-performance")
+def get_service_performance(
+    start_date: Optional[str] = Query(None, description="Start date (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date (ISO format)"),
+    provider_id: Optional[str] = Query(None, description="Filter by provider ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get service performance metrics.
+
+    Returns service popularity (count and revenue per service type).
+    """
+    # Default to last 30 days if no dates provided
+    if not end_date:
+        end_date_dt = datetime.now(timezone.utc)
+    else:
+        end_date_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+    if not start_date:
+        start_date_dt = end_date_dt - timedelta(days=30)
+    else:
+        start_date_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+
+    provider_uuid = UUID(provider_id) if provider_id else None
+    data = AnalyticsService.get_service_performance(db, start_date_dt, end_date_dt, provider_uuid)
+
+    return {
+        "start_date": start_date_dt.isoformat(),
+        "end_date": end_date_dt.isoformat(),
+        **data
+    }

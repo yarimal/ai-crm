@@ -57,5 +57,29 @@ export const analyticsService = {
     const url = queryString ? `/analytics/realtime?${queryString}` : '/analytics/realtime';
 
     return api.get(url);
+  },
+
+  getRevenueStats: async (startDate = null, endDate = null, providerId = null) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (providerId) params.append('provider_id', providerId);
+
+    const queryString = params.toString();
+    const url = queryString ? `/analytics/revenue?${queryString}` : '/analytics/revenue';
+
+    return api.get(url);
+  },
+
+  getServicePerformance: async (startDate = null, endDate = null, providerId = null) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (providerId) params.append('provider_id', providerId);
+
+    const queryString = params.toString();
+    const url = queryString ? `/analytics/service-performance?${queryString}` : '/analytics/service-performance';
+
+    return api.get(url);
   }
 };

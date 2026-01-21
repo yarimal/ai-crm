@@ -8,6 +8,7 @@ from app.models.provider import Provider
 from app.models.client import Client
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.blocked_time import BlockedTime
+from app.models.service import Service
 
 
 def build_context_data(db: Session) -> str:
@@ -17,6 +18,7 @@ def build_context_data(db: Session) -> str:
     This builds a text summary of:
     - Active providers
     - Active clients
+    - Available services
     - Upcoming appointments (next 14 days)
     - Blocked times (next 14 days)
 
@@ -25,10 +27,11 @@ def build_context_data(db: Session) -> str:
     """
     providers_text = _build_providers_context(db)
     clients_text = _build_clients_context(db)
+    services_text = _build_services_context(db)
     appointments_text = _build_appointments_context(db)
     blocked_text = _build_blocked_times_context(db)
 
-    return providers_text + clients_text + appointments_text + blocked_text
+    return providers_text + clients_text + services_text + appointments_text + blocked_text
 
 
 def _build_providers_context(db: Session) -> str:
@@ -60,6 +63,27 @@ def _build_clients_context(db: Session) -> str:
             text += "\n"
     else:
         text += "- No clients registered yet\n"
+
+    return text
+
+
+def _build_services_context(db: Session) -> str:
+    """Build services section of context"""
+    services = db.query(Service).filter(Service.is_active == True).all()
+
+    text = "\nSERVICES:\n"
+    if services:
+        for s in services:
+            price_str = f"${float(s.price):.2f}" if s.price else "No price"
+            duration_str = f"{s.duration_minutes} min" if s.duration_minutes else ""
+            text += f"- {s.name} [ID: {s.id}] - {price_str}"
+            if duration_str:
+                text += f", {duration_str}"
+            if s.description:
+                text += f" - {s.description}"
+            text += "\n"
+    else:
+        text += "- No services available\n"
 
     return text
 

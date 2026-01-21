@@ -1,110 +1,78 @@
 # AI-Powered CRM Scheduling System
 
-A full-stack Customer Relationship Management application with AI-powered natural language scheduling capabilities and voice interface integration.
+A modern, full-stack Customer Relationship Management application with AI-powered natural language scheduling, real-time analytics, and comprehensive appointment management.
 
 ## Overview
 
-This CRM system combines traditional appointment scheduling with modern AI technology to enable natural language booking through Google Gemini. Users can interact with the system via text or voice commands to manage providers, clients, appointments, and blocked time slots.
+This CRM system combines traditional appointment scheduling with modern AI technology to streamline office and clinic operations. Built with FastAPI and React, it enables natural language booking, real-time analytics, and intelligent conflict detection.
 
 ## Key Features
 
-- **AI Scheduling Assistant**: Natural language processing for appointment booking using Google Gemini API with function calling
-- **Voice Interface**: Browser-based speech recognition and text-to-speech synthesis
-- **Interactive Calendar**: Visual scheduling with month and day views, drag-and-drop support
-- **Real-time Analytics Dashboard**: Live metrics with auto-refresh including:
-  - Overview cards (total appointments, completion rate, average duration, no-show rate, upcoming count)
-  - Live updates (today's appointments, occupancy rate, current/next appointment with countdown)
-  - Appointments over time trend chart (line graph)
-  - Appointments by provider distribution (bar chart with unique colors)
-  - Appointments by status breakdown (pie chart and detailed table)
-  - Provider-based filtering across all analytics
-- **Conflict Detection**: Automatic validation against existing appointments and blocked times
-- **Provider Management**: Multi-provider support with specialty tracking and working hours
-- **Client Management**: Comprehensive client information and appointment history
-- **Blocked Time Slots**: Recurring and one-time availability blocking
-- **Comprehensive Testing**: Full test coverage with pytest and Vitest
+### AI-Powered Assistant
+- Natural language appointment booking via Google Gemini API
+- Voice interface with browser-based speech recognition
+- Automatic conflict detection and validation
+- Context-aware responses with conversation history
+
+### Advanced Scheduling
+- Interactive calendar with month and day views
+- Multi-provider support with individual schedules
+- Blocked time management (recurring and one-time)
+- Appointment status tracking (scheduled, confirmed, completed, cancelled, no-show)
+- Visual status indicators (cancelled appointments marked in red)
+
+### Real-Time Analytics Dashboard
+- Overview metrics: total appointments, completion rate, average duration, no-show rate
+- Live updates with 60-second auto-refresh
+- Current and next appointment tracking with countdowns
+- Provider occupancy rate monitoring
+- Data visualizations: trend charts, provider distribution, status breakdown
+- Revenue tracking and service performance metrics
+- Provider-based filtering and custom date ranges
+
+### Client & Provider Management
+- Comprehensive client profiles with appointment history
+- Provider profiles with specialty and availability tracking
+- Advanced search and filtering
+- Soft delete for data preservation
+
+### Service Management
+- Service catalog with pricing and duration
+- Revenue tracking by service type
+- Performance analytics for services
 
 ## Technology Stack
 
 ### Backend
-- **Framework**: FastAPI (Python 3.11+)
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **AI Integration**: Google Gemini API
-- **Architecture**: Service layer pattern with dependency injection
-- **Testing**: pytest with in-memory SQLite
+- FastAPI (Python 3.11+)
+- PostgreSQL with SQLAlchemy ORM
+- Google Gemini API integration
+- Service layer architecture with dependency injection
+- pytest for testing
 
 ### Frontend
-- **Framework**: React 19
-- **Build Tool**: Vite
-- **Calendar**: FullCalendar library
-- **Charts**: Recharts (line, bar, pie charts)
-- **API Client**: Fetch with centralized configuration
-- **Testing**: Vitest with React Testing Library
-- **Architecture**: Component-based with CSS modules
+- React 19 with Vite
+- FullCalendar for scheduling
+- Recharts for data visualization
+- CSS Modules for styling
+- Vitest with React Testing Library
 
 ### Infrastructure
-- **Containerization**: Docker and Docker Compose
-- **Database Admin**: pgAdmin 4
-
-## Project Structure
-
-```
-my-crm-app/
-├── backend/
-│   ├── app/
-│   │   ├── routers/          # API endpoint handlers
-│   │   ├── services/         # Business logic layer
-│   │   │   ├── ai_functions.py
-│   │   │   └── ai_context.py
-│   │   ├── models/           # SQLAlchemy database models
-│   │   ├── schemas/          # Pydantic validation schemas
-│   │   ├── config.py         # Application configuration
-│   │   ├── database.py       # Database connection setup
-│   │   └── main.py           # FastAPI application entry
-│   ├── tests/
-│   │   ├── conftest.py       # Test fixtures
-│   │   └── test_providers.py
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   │   ├── calendar/
-│   │   │   ├── clients/
-│   │   │   ├── providers/
-│   │   │   ├── dashboard/    # Analytics components
-│   │   │   │   ├── DashboardHeader.jsx
-│   │   │   │   ├── OverviewCards.jsx
-│   │   │   │   ├── LiveMetrics.jsx
-│   │   │   │   └── ChartsSection.jsx
-│   │   │   ├── pages/
-│   │   │   │   └── Dashboard.jsx
-│   │   │   └── ai/
-│   │   ├── services/         # API service layer
-│   │   │   └── analyticsService.js
-│   │   ├── config/           # Configuration management
-│   │   └── tests/            # Vitest test suites
-│   ├── package.json
-│   └── vite.config.js
-├── docker-compose.yml
-├── .env.example
-├── SETUP.md
-├── TESTING.md
-└── README.md
-```
+- Docker and Docker Compose
+- pgAdmin 4 for database administration
+- Centralized environment configuration
 
 ## Quick Start
 
 ### Prerequisites
-
 - Docker and Docker Compose
-- Google Gemini API key (obtain from [Google AI Studio](https://aistudio.google.com/app/apikey))
+- Google Gemini API key (obtain from https://aistudio.google.com/app/apikey)
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-crm.git
+git clone https://github.com/yarimal/ai-crm.git
 cd ai-crm
 ```
 
@@ -113,8 +81,8 @@ cd ai-crm
 cp .env.example .env
 ```
 
-Edit `.env` and add your configuration:
-```
+Edit `.env`:
+```env
 GEMINI_API_KEY=your_actual_api_key_here
 DATABASE_URL=postgresql://crm_user:crm_password@localhost:5432/crm_database
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
@@ -134,10 +102,7 @@ docker-compose up
 
 ## Development Setup
 
-For detailed local development setup without Docker, see [SETUP.md](./SETUP.md).
-
 ### Backend Development
-
 ```bash
 cd backend
 python -m venv venv
@@ -147,7 +112,6 @@ uvicorn app.main:app --reload
 ```
 
 ### Frontend Development
-
 ```bash
 cd frontend
 npm install
@@ -156,114 +120,89 @@ npm run dev
 
 ## Testing
 
-Complete testing documentation is available in [TESTING.md](./TESTING.md).
-
-### Run Backend Tests
-
+### Backend Tests
 ```bash
 cd backend
-pytest                          # Run all tests
-pytest -v                       # Verbose output
-pytest --cov=app               # With coverage report
+pytest                    # Run all tests
+pytest -v                 # Verbose output
+pytest --cov=app         # With coverage
 ```
 
-Current backend test coverage: 6 passing tests covering provider CRUD operations.
-
-### Run Frontend Tests
-
+### Frontend Tests
 ```bash
 cd frontend
-npm test                        # Run all tests
-npm run test:ui                # Interactive UI
-npm run test:coverage          # Coverage report
-```
-
-Current frontend test coverage: 7 passing tests covering configuration and API service.
-
-### Run All Tests
-
-```bash
-# Windows
-run_tests.bat
-
-# Linux/Mac
-./run_tests.sh
+npm test                  # Run all tests
+npm run test:ui          # Interactive UI
+npm run test:coverage    # Coverage report
 ```
 
 ## API Documentation
 
-Once the backend is running, interactive API documentation is available at:
+Interactive API documentation available at http://localhost:8000/docs
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+### Main Endpoints
 
-### Key Endpoints
-
-**Provider Management**
+**Providers**
 - `POST /api/providers` - Create provider
 - `GET /api/providers` - List providers
 - `PUT /api/providers/{id}` - Update provider
-- `DELETE /api/providers/{id}` - Delete provider (soft delete)
+- `DELETE /api/providers/{id}` - Soft delete provider
 
-**Client Management**
+**Clients**
 - `POST /api/clients` - Create client
-- `GET /api/clients` - List clients with search
+- `GET /api/clients` - List clients
+- `PUT /api/clients/{id}` - Update client
+- `DELETE /api/clients/{id}` - Soft delete client
 
-**Appointment Management**
+**Appointments**
 - `POST /api/appointments` - Create appointment
-- `GET /api/appointments` - List appointments with filters
-- `POST /api/blocked-times` - Create blocked time
+- `GET /api/appointments` - List appointments
+- `PUT /api/appointments/{id}` - Update appointment
+- `DELETE /api/appointments/{id}` - Delete appointment
+
+**Services**
+- `POST /api/services` - Create service
+- `GET /api/services` - List services
+- `PUT /api/services/{id}` - Update service
+- `DELETE /api/services/{id}` - Delete service
 
 **Analytics**
-- `GET /api/analytics/overview?start_date={date}&end_date={date}&provider_id={uuid}` - Overview metrics
-- `GET /api/analytics/appointments-over-time?start_date={date}&end_date={date}&provider_id={uuid}` - Trend data
-- `GET /api/analytics/appointments-by-provider?start_date={date}&end_date={date}` - Provider distribution
-- `GET /api/analytics/appointments-by-status?start_date={date}&end_date={date}&provider_id={uuid}` - Status breakdown
-- `GET /api/analytics/realtime?provider_id={uuid}` - Live metrics with current/next appointment
+- `GET /api/analytics/overview` - Overview statistics
+- `GET /api/analytics/appointments-over-time` - Trend data
+- `GET /api/analytics/appointments-by-provider` - Provider distribution
+- `GET /api/analytics/appointments-by-status` - Status breakdown
+- `GET /api/analytics/realtime` - Live metrics
+- `GET /api/analytics/revenue` - Revenue statistics
+- `GET /api/analytics/service-performance` - Service metrics
 
 **AI Assistant**
-- `POST /api/ai/chat` - AI chat endpoint
+- `POST /api/ai/chat` - Send message to AI
+- `GET /api/chats` - List chat sessions
+- `GET /api/chats/{id}` - Get chat history
 
-## Architecture Highlights
+## Architecture
 
 ### Service Layer Pattern
+Business logic separated from routing handlers:
+- `ai_functions.py` - AI function implementations
+- `ai_context.py` - Context building for AI prompts
+- `analytics_service.py` - Analytics calculations with filtering
 
-Business logic is separated from routing handlers:
-- `ai_functions.py`: AI function implementations (appointment creation, availability checking)
-- `ai_context.py`: Context building for AI prompts
-- `analytics_service.py`: Analytics calculations with provider filtering and time windows
+### Component-Based Frontend
+Modular dashboard components:
+- `DashboardHeader.jsx` - Filters and controls
+- `OverviewCards.jsx` - Summary metrics
+- `LiveMetrics.jsx` - Real-time updates
+- `ChartsSection.jsx` - Data visualizations
 
-### Component-Based Frontend Architecture
-
-Dashboard is modular with focused, reusable components:
-- `DashboardHeader.jsx`: Provider and date range filters
-- `OverviewCards.jsx`: 5 summary metric cards (total, completion rate, duration, no-show, upcoming)
-- `LiveMetrics.jsx`: Real-time updates with 60-second auto-refresh
-- `ChartsSection.jsx`: 4 visualizations (line trend, provider bars, status pie, breakdown table)
-
-### Timezone-Aware DateTime Handling
-
-All datetime comparisons use UTC timezone-aware objects with 48-hour windows to handle cross-timezone queries without requiring client timezone configuration.
-
-### Real-time Updates
-
-Live metrics refresh every 60 seconds showing:
-- Current appointment with time remaining
-- Next upcoming appointment with countdown
-- Today's appointment count and occupancy rate
-- Provider-filtered views
-
-### Centralized Configuration
-
-Single `.env` file at project root serves both frontend and backend configurations.
-
-### Test Isolation
-
-Tests use in-memory SQLite databases with automatic cleanup between test runs.
+### Key Design Decisions
+- Timezone-aware datetime handling with UTC
+- Automatic exclusion of cancelled appointments from analytics
+- Real-time updates with 60-second refresh intervals
+- Centralized configuration via .env file
+- Test isolation with in-memory databases
 
 ## Environment Variables
-
-Required variables (see `.env.example` for complete list):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -272,50 +211,43 @@ Required variables (see `.env.example` for complete list):
 | `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:3000` |
 | `VITE_API_BASE_URL` | Frontend API base URL | `http://localhost:8000/api` |
 
-## Security Considerations
-
-This is a development/portfolio project.
-
 ## Troubleshooting
 
-### Backend won't start
+**Backend won't start**
 - Verify PostgreSQL is running: `docker-compose ps`
 - Check `.env` file exists and contains valid values
 - Review logs: `docker-compose logs backend`
 
-### Frontend can't connect to API
-- Verify `VITE_API_BASE_URL` in `.env` matches backend address
+**Frontend can't connect to API**
+- Verify `VITE_API_BASE_URL` matches backend address
 - Check CORS origins include frontend URL
-- Ensure backend is running: http://localhost:8000/docs should load
+- Ensure backend is running at http://localhost:8000
 
-### AI features not working
-- Verify `GEMINI_API_KEY` is set in `.env`
-- Check API key is valid at [Google AI Studio](https://aistudio.google.com/app/apikey)
+**AI features not working**
+- Verify `GEMINI_API_KEY` is set correctly
+- Check API key validity at Google AI Studio
 - Review backend logs for API errors
 
-### Tests failing
-- Backend: Ensure no PostgreSQL-specific UUID issues
-- Frontend: Verify Node version 18+ and compatible React Testing Library version
-- Run `npm install --legacy-peer-deps` if dependency conflicts occur
+**Database connection errors**
+- Check PostgreSQL container: `docker ps`
+- Verify `DATABASE_URL` in `.env`
+- Restart containers: `docker-compose restart`
 
 ## Contributing
 
-This is a portfolio project, but suggestions and feedback are welcome.
-
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+3. Make your changes with tests
+4. Submit a pull request
 
 ## License
 
 MIT License - See LICENSE file for details
 
-
 ## Acknowledgments
 
 - Google Gemini AI for natural language processing
-- FullCalendar for calendar component
+- FullCalendar for calendar components
 - FastAPI framework and community
-- React and Vite teams
+- React and Vite development teams
+- Recharts for data visualizations

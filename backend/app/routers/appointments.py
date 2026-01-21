@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.provider import Provider
 from app.models.client import Client
+from app.models.service import Service
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -20,13 +21,15 @@ router = APIRouter(prefix="/appointments", tags=["Appointments"])
 class AppointmentCreate(BaseModel):
     provider_id: UUID
     client_id: UUID
+    service_id: Optional[UUID] = None
     start_time: datetime = Field(..., alias="start")
     end_time: datetime = Field(..., alias="end")
     title: Optional[str] = None
     service_type: Optional[str] = None
     notes: Optional[str] = None
+    revenue: Optional[float] = None
     color: Optional[str] = None
-    
+
     class Config:
         populate_by_name = True
 
@@ -34,14 +37,16 @@ class AppointmentCreate(BaseModel):
 class AppointmentUpdate(BaseModel):
     provider_id: Optional[UUID] = None
     client_id: Optional[UUID] = None
+    service_id: Optional[UUID] = None
     start_time: Optional[datetime] = Field(None, alias="start")
     end_time: Optional[datetime] = Field(None, alias="end")
     title: Optional[str] = None
     service_type: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+    revenue: Optional[float] = None
     color: Optional[str] = None
-    
+
     class Config:
         populate_by_name = True
 
@@ -110,7 +115,17 @@ async def create_appointment(
     client = db.query(Client).filter(Client.id == data.client_id).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    
+
+    # If service_id is provided, verify service exists and get price
+    service_revenue = data.revenue
+    if data.service_id:
+        service = db.query(Service).filter(Service.id == data.service_id).first()
+        if not service:
+            raise HTTPException(status_code=404, detail="Service not found")
+        # Use service price if revenue not explicitly provided
+        if service_revenue is None:
+            service_revenue = float(service.price)
+
     # Check for conflicts
     conflict = db.query(Appointment).filter(
         Appointment.provider_id == data.provider_id,
@@ -128,11 +143,13 @@ async def create_appointment(
     appointment = Appointment(
         provider_id=data.provider_id,
         client_id=data.client_id,
+        service_id=data.service_id,
         start_time=data.start_time,
         end_time=data.end_time,
         title=data.title,
         service_type=data.service_type,
         notes=data.notes,
+        revenue=service_revenue,
         color=data.color
     )
     
@@ -249,6 +266,15 @@ async def update_appointment(
         appointment.provider_id = data.provider_id
     if data.client_id is not None:
         appointment.client_id = data.client_id
+    if data.service_id is not None:
+        appointment.service_id = data.service_id
+        # If service changed, update revenue from service price
+        if data.revenue is None:
+            service = db.query(Service).filter(Service.id == data.service_id).first()
+            if service:
+                appointment.revenue = float(service.price)
+    if data.revenue is not None:
+        appointment.revenue = data.revenue
     if data.start_time is not None:
         appointment.start_time = data.start_time
     if data.end_time is not None:
@@ -263,7 +289,7 @@ async def update_appointment(
         appointment.status = data.status
     if data.color is not None:
         appointment.color = data.color
-    
+
     db.commit()
     db.refresh(appointment)
     

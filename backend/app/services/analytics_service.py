@@ -18,10 +18,11 @@ class AnalyticsService:
         start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date
         end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date
 
-        # Total appointments in date range
+        # Total appointments in date range (excluding cancelled)
         query = db.query(Appointment).filter(
             Appointment.start_time >= start_date,
-            Appointment.start_time <= end_date
+            Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             query = query.filter(Appointment.provider_id == provider_id)
@@ -47,26 +48,28 @@ class AnalyticsService:
 
         status_breakdown = {status: count for status, count in status_counts}
 
-        # Today's appointments - use a 48-hour window to account for timezone differences
+        # Today's appointments - use a 48-hour window to account for timezone differences (excluding cancelled)
         now = datetime.now(timezone.utc)
         today_window_start = now - timedelta(hours=24)
         today_window_end = now + timedelta(hours=24)
 
         today_query = db.query(Appointment).filter(
             Appointment.start_time >= today_window_start,
-            Appointment.start_time < today_window_end
+            Appointment.start_time < today_window_end,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             today_query = today_query.filter(Appointment.provider_id == provider_id)
         today_appointments = today_query.count()
 
-        # This week's appointments - use a wider window
+        # This week's appointments - use a wider window (excluding cancelled)
         week_window_start = now - timedelta(days=7)
         week_window_end = now + timedelta(days=7)
 
         week_query = db.query(Appointment).filter(
             Appointment.start_time >= week_window_start,
-            Appointment.start_time < week_window_end
+            Appointment.start_time < week_window_end,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             week_query = week_query.filter(Appointment.provider_id == provider_id)
@@ -89,13 +92,14 @@ class AnalyticsService:
         start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date
         end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date
 
-        # Query appointments grouped by date
+        # Query appointments grouped by date (excluding cancelled)
         query = db.query(
             func.date(Appointment.start_time).label('date'),
             func.count(Appointment.id).label('count')
         ).filter(
             Appointment.start_time >= start_date,
-            Appointment.start_time <= end_date
+            Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             query = query.filter(Appointment.provider_id == provider_id)
@@ -111,7 +115,7 @@ class AnalyticsService:
         start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date
         end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date
 
-        # Query appointments grouped by provider
+        # Query appointments grouped by provider (excluding cancelled)
         appointments = db.query(
             Provider.name,
             func.count(Appointment.id).label('count')
@@ -120,6 +124,7 @@ class AnalyticsService:
         ).filter(
             Appointment.start_time >= start_date,
             Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled',
             Provider.is_active == True
         ).group_by(Provider.name).order_by(func.count(Appointment.id).desc()).all()
 
@@ -185,16 +190,18 @@ class AnalyticsService:
             status = appt.status
             today_by_status[status] = today_by_status.get(status, 0) + 1
 
-        total_today = len(window_appointments)
+        # Total today excludes cancelled
+        total_today = sum(count for status, count in today_by_status.items() if status != 'cancelled')
 
-        # Find current appointment (happening right now)
+        # Find current appointment (happening right now, exclude cancelled)
         current_query = db.query(Appointment, Provider, Client).join(
             Provider, Appointment.provider_id == Provider.id
         ).join(
             Client, Appointment.client_id == Client.id
         ).filter(
             Appointment.start_time <= now,
-            Appointment.end_time >= now
+            Appointment.end_time >= now,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             current_query = current_query.filter(Appointment.provider_id == provider_id)
@@ -215,13 +222,14 @@ class AnalyticsService:
                 "minutesRemaining": minutes_remaining
             }
 
-        # Find next upcoming appointment
+        # Find next upcoming appointment (exclude cancelled)
         next_query = db.query(Appointment, Provider, Client).join(
             Provider, Appointment.provider_id == Provider.id
         ).join(
             Client, Appointment.client_id == Client.id
         ).filter(
-            Appointment.start_time > now
+            Appointment.start_time > now,
+            Appointment.status != 'cancelled'
         )
         if provider_id:
             next_query = next_query.filter(Appointment.provider_id == provider_id)
@@ -266,4 +274,125 @@ class AnalyticsService:
             "nextAppointment": next_appt_data,
             "occupancyRate": round(occupancy_rate, 1),
             "timestamp": now.isoformat()
+        }
+
+    @staticmethod
+    def get_revenue_stats(db: Session, start_date: datetime, end_date: datetime, provider_id: Optional[UUID] = None) -> Dict[str, Any]:
+        """Get revenue statistics for the dashboard"""
+
+        # Make dates timezone-aware
+        start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date
+        end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date
+
+        # Base query for appointments with revenue in date range (excluding cancelled)
+        query = db.query(Appointment).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled',
+            Appointment.revenue.isnot(None)
+        )
+        if provider_id:
+            query = query.filter(Appointment.provider_id == provider_id)
+
+        # Total revenue (excluding cancelled appointments)
+        total_revenue = db.query(func.sum(Appointment.revenue)).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled',
+            Appointment.revenue.isnot(None)
+        )
+        if provider_id:
+            total_revenue = total_revenue.filter(Appointment.provider_id == provider_id)
+        total_revenue = float(total_revenue.scalar() or 0)
+
+        # Revenue by completed appointments only
+        completed_revenue = db.query(func.sum(Appointment.revenue)).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.status == 'completed',
+            Appointment.revenue.isnot(None)
+        )
+        if provider_id:
+            completed_revenue = completed_revenue.filter(Appointment.provider_id == provider_id)
+        completed_revenue = float(completed_revenue.scalar() or 0)
+
+        # Pending revenue (scheduled/confirmed but not completed)
+        pending_revenue = total_revenue - completed_revenue
+
+        # Average revenue per appointment
+        total_appts = query.count()
+        avg_revenue = total_revenue / total_appts if total_appts > 0 else 0
+
+        # Revenue by provider (top 5)
+        revenue_by_provider = db.query(
+            Provider.name,
+            func.sum(Appointment.revenue).label('revenue')
+        ).join(
+            Appointment, Provider.id == Appointment.provider_id
+        ).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.revenue.isnot(None)
+        )
+        if provider_id:
+            revenue_by_provider = revenue_by_provider.filter(Appointment.provider_id == provider_id)
+        revenue_by_provider = revenue_by_provider.group_by(Provider.name).order_by(func.sum(Appointment.revenue).desc()).limit(5).all()
+
+        # Revenue over time (daily)
+        revenue_over_time = db.query(
+            func.date(Appointment.start_time).label('date'),
+            func.sum(Appointment.revenue).label('revenue')
+        ).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.revenue.isnot(None)
+        )
+        if provider_id:
+            revenue_over_time = revenue_over_time.filter(Appointment.provider_id == provider_id)
+        revenue_over_time = revenue_over_time.group_by(func.date(Appointment.start_time)).order_by(func.date(Appointment.start_time)).all()
+
+        return {
+            "totalRevenue": round(total_revenue, 2),
+            "completedRevenue": round(completed_revenue, 2),
+            "pendingRevenue": round(pending_revenue, 2),
+            "averageRevenue": round(avg_revenue, 2),
+            "totalAppointments": total_appts,
+            "revenueByProvider": [{"provider": name, "revenue": float(revenue)} for name, revenue in revenue_by_provider],
+            "revenueOverTime": [{"date": str(date), "revenue": float(revenue)} for date, revenue in revenue_over_time]
+        }
+
+    @staticmethod
+    def get_service_performance(db: Session, start_date: datetime, end_date: datetime, provider_id: Optional[UUID] = None) -> Dict[str, Any]:
+        """Get service performance metrics"""
+        from app.models.service import Service
+
+        # Make dates timezone-aware
+        start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date
+        end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date
+
+        # Service popularity (count of appointments per service, excluding cancelled)
+        service_query = db.query(
+            Service.name,
+            func.count(Appointment.id).label('count'),
+            func.sum(Appointment.revenue).label('revenue')
+        ).join(
+            Appointment, Service.id == Appointment.service_id
+        ).filter(
+            Appointment.start_time >= start_date,
+            Appointment.start_time <= end_date,
+            Appointment.status != 'cancelled'
+        )
+        if provider_id:
+            service_query = service_query.filter(Appointment.provider_id == provider_id)
+        service_stats = service_query.group_by(Service.name).order_by(func.count(Appointment.id).desc()).all()
+
+        return {
+            "servicePerformance": [
+                {
+                    "service": name,
+                    "count": count,
+                    "revenue": float(revenue) if revenue else 0
+                }
+                for name, count, revenue in service_stats
+            ]
         }

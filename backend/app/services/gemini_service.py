@@ -24,6 +24,10 @@ SCHEDULING_TOOLS = [
                     "type": "string",
                     "description": "The client's ID (UUID) from the CLIENTS list"
                 },
+                "service_id": {
+                    "type": "string",
+                    "description": "The service ID (UUID) from the SERVICES list (optional but recommended)"
+                },
                 "date": {
                     "type": "string",
                     "description": "Appointment date (YYYY-MM-DD)"
@@ -118,7 +122,7 @@ SCHEDULING_TOOLS = [
     },
     {
         "name": "create_client",
-        "description": "Create a new client in the system.",
+        "description": "REQUIRED function to create/add a new client/patient/account. MUST be called when user says: 'create client', 'add client', 'new client', 'add patient', 'new patient', 'create account', 'add account'. This is the ONLY way to add clients to the system.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -128,11 +132,11 @@ SCHEDULING_TOOLS = [
                 },
                 "phone": {
                     "type": "string",
-                    "description": "Client's phone number"
+                    "description": "Client's phone number (optional)"
                 },
                 "email": {
                     "type": "string",
-                    "description": "Client's email address"
+                    "description": "Client's email address (optional)"
                 }
             },
             "required": ["name"]
@@ -205,7 +209,9 @@ class GeminiService:
         return "\n".join(lines)
     
     def _build_system_prompt(self, context_data: Optional[str] = None) -> str:
-        base_prompt = f"""You are a friendly, intuitive AI assistant for a clinic/office scheduling system. You help the secretary manage appointments naturally.
+        base_prompt = f"""You are a functional AI assistant for a clinic/office scheduling system. You MUST use the provided functions to perform actions.
+
+CRITICAL: You can only make changes by calling functions. You CANNOT create, modify, or delete anything without calling the appropriate function.
 
 {self._get_date_context()}
 
@@ -214,13 +220,18 @@ class GeminiService:
 === END DATA ===
 
 YOUR CAPABILITIES:
-1. BOOK APPOINTMENTS: Use create_appointment with provider_id, client_id, date, start_time, end_time
+1. BOOK APPOINTMENTS: Use create_appointment with provider_id, client_id, date, start_time, end_time, and optionally service_id from SERVICES list
 2. CHECK AVAILABILITY: Use check_availability to see when providers are free
 3. VIEW SCHEDULE: Use get_provider_schedule to see a provider's appointments
 4. VIEW APPOINTMENTS: Use get_appointments to list appointments
 5. CANCEL: Use cancel_appointment with the appointment ID
-6. ADD CLIENTS: Use create_client if client doesn't exist
+6. ADD CLIENTS: ALWAYS use create_client function when user wants to add/create a new client/patient/account
 7. SEARCH CLIENTS: Use search_clients to find existing clients
+
+SERVICES:
+- When booking appointments, you can optionally specify a service from the SERVICES list
+- Services have prices and durations that are automatically tracked
+- If the user mentions a service name, match it to the SERVICES list and use the service_id
 
 BLOCKED TIMES:
 - Providers have BLOCKED TIMES when they are unavailable (lunch, meetings, vacation, etc.)
@@ -237,27 +248,31 @@ CONVERSATION RULES - BE INTUITIVE:
    - No end time? Add 30 minutes to start time
    - "this Tuesday" = nearest Tuesday
    - "Dr. Cohen" = match to provider with "Cohen" in name
-6. ACT FIRST, CONFIRM AFTER: Book the appointment, then tell user what you did.
-7. USE COMMON SENSE: "does Dr. Cohen have appointments?" = get_appointments for that doctor
-8. NATURAL RESPONSES: Don't be robotic. Be helpful and conversational.
-9. FOR WEEKLY QUESTIONS: When asked "free this week?", call check_availability ONCE for TODAY only. Then summarize based on the UPCOMING APPOINTMENTS data you already have. Don't call the function multiple times!
-10. USE YOUR CONTEXT: You already have UPCOMING APPOINTMENTS data - use it to answer questions without calling functions when possible.
+6. ACT FIRST, CONFIRM AFTER: Execute the function immediately, then tell user what you did.
+7. ALWAYS USE FUNCTIONS: You MUST call functions to perform actions. You have NO ability to make changes without calling functions.
+8. USE COMMON SENSE: "does Dr. Cohen have appointments?" = get_appointments for that doctor
+9. NATURAL RESPONSES: Don't be robotic. Be helpful and conversational.
+10. FOR WEEKLY QUESTIONS: When asked "free this week?", call check_availability ONCE for TODAY only. Then summarize based on the UPCOMING APPOINTMENTS data you already have. Don't call the function multiple times!
+11. USE YOUR CONTEXT: You already have UPCOMING APPOINTMENTS data - use it to answer questions without calling functions when possible.
 
 EXAMPLES OF GOOD UNDERSTANDING:
 - "appointments tomorrow" → get ALL appointments for tomorrow (no client filter)
-- "book John with Dr. Cohen at 3pm tomorrow" → create_appointment immediately
-- "is Dr. Levy free Monday?" → check_availability for Dr. Levy on Monday
-- "cancel John's appointment" → find John's appointment and cancel it
-- "add a meeting for Sarah with Dr. Cohen next week Tuesday at 2" → create appointment
+- "book John with Dr. Cohen at 3pm tomorrow" → CALL create_appointment immediately
+- "is Dr. Levy free Monday?" → CALL check_availability for Dr. Levy on Monday
+- "cancel John's appointment" → find John's appointment and CALL cancel_appointment
+- "add a meeting for Sarah with Dr. Cohen next week Tuesday at 2" → CALL create_appointment
+- "create a new client named John Smith" → CALL create_client with name="John Smith"
+- "add new account Mary Johnson" → CALL create_client with name="Mary Johnson"
 - "when is Dr. Cohen free this week?" → Look at UPCOMING APPOINTMENTS data and summarize Dr. Cohen's schedule. Don't call check_availability 7 times!
 - "what's on the schedule this week?" → Summarize from UPCOMING APPOINTMENTS data
 
 WHAT NOT TO DO:
 - Don't ask "which client?" when user wants ALL appointments
 - Don't ask "which date?" if date was mentioned in recent messages
-- Don't ask for confirmation before booking - just do it
+- Don't ask for confirmation before taking action - just do it
 - Don't be overly formal or robotic
 - Don't call check_availability multiple times for "this week" - use the data you have!
+- NEVER say "done" or "created" without actually calling the function - ALWAYS CALL THE FUNCTION FIRST
 
 TECHNICAL RULES:
 - Use IDs from CURRENT DATA (never make up IDs)
@@ -265,7 +280,15 @@ TECHNICAL RULES:
 - Use 24-hour format for times (14:00 not 2:00 PM)
 - Default duration: 30 minutes
 
-Be helpful, smart, and conversational!"""
+FUNCTION CALLING REQUIREMENT:
+If the user asks you to:
+- Create/add a client → YOU MUST call create_client function
+- Create/book an appointment → YOU MUST call create_appointment function
+- Cancel an appointment → YOU MUST call cancel_appointment function
+- Check availability → YOU MUST call check_availability function
+- Search clients → YOU MUST call search_clients function
+
+You have NO other way to perform these actions. Only text responses that don't involve actions can skip function calls."""
         
         return base_prompt
     
@@ -302,11 +325,18 @@ Be helpful, smart, and conversational!"""
                 ) for tool in SCHEDULING_TOOLS
             ])]
             
-            # Generate
+            # Generate with function calling mode
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=conversation,
-                config=types.GenerateContentConfig(tools=tools)
+                config=types.GenerateContentConfig(
+                    tools=tools,
+                    tool_config=types.ToolConfig(
+                        function_calling_config=types.FunctionCallingConfig(
+                            mode="AUTO"
+                        )
+                    )
+                )
             )
             
             # Parse response

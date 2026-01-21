@@ -4,7 +4,7 @@ import config from '../../config';
 
 const API_BASE = config.apiBaseUrl;
 
-export default function ClientsPage() {
+export default function ClientsPage({ refreshTrigger = 0 }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -21,6 +21,12 @@ export default function ClientsPage() {
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchClients(searchTerm);
+    }
+  }, [refreshTrigger]);
 
   const fetchClients = async (search = '') => {
     try {

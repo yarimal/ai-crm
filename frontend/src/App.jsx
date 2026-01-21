@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import Calendar from './components/calendar/Calendar';
 import ProvidersPage from './components/pages/ProvidersPage';
 import ClientsPage from './components/pages/ClientsPage';
+import Services from './components/pages/Services';
 import Dashboard from './components/pages/Dashboard';
 import AIChat from './components/chat/AIChat';
 import './styles/App.css';
@@ -13,11 +14,16 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [calendarRefreshTrigger, setCalendarRefreshTrigger] = useState(0);
+  const [clientsRefreshTrigger, setClientsRefreshTrigger] = useState(0);
   const [events, setEvents] = useState([]);
   const [eventToEdit, setEventToEdit] = useState(null);
 
   const handleEventsChanged = () => {
     setCalendarRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleClientsChanged = () => {
+    setClientsRefreshTrigger(prev => prev + 1);
   };
 
   const handleEventsLoaded = (loadedEvents) => {
@@ -39,7 +45,9 @@ function App() {
       case 'providers':
         return <ProvidersPage />;
       case 'clients':
-        return <ClientsPage />;
+        return <ClientsPage refreshTrigger={clientsRefreshTrigger} />;
+      case 'services':
+        return <Services />;
       case 'calendar':
       default:
         return (
@@ -74,10 +82,11 @@ function App() {
         </main>
       </div>
 
-      <AIChat 
-        isOpen={isChatOpen} 
+      <AIChat
+        isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         onAppointmentChange={handleEventsChanged}
+        onClientChange={handleClientsChanged}
       />
     </div>
   );

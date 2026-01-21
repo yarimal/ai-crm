@@ -5,17 +5,18 @@
 }
 
 .chartCard {
-  background: white;
+  background: var(--color-bg-primary);
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
 }
 
 .chartCard h2 {
   margin: 0 0 20px 0;
   font-size: 18px;
-  color: #333;
-  border-bottom: 2px solid #f0f0f0;
+  color: var(--color-text-primary);
+  border-bottom: 2px solid var(--color-border-light);
   padding-bottom: 10px;
 }
 
@@ -32,13 +33,13 @@
 .statusTable td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .statusTable th {
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-tertiary);
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.5px;
@@ -46,11 +47,11 @@
 
 .statusTable td {
   font-size: 14px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .statusTable tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--color-bg-secondary);
 }
 
 .statusDot {

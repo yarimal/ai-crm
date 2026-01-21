@@ -45,6 +45,7 @@ class Provider(Base):
     
     # Relationships
     blocked_times = relationship("BlockedTime", back_populates="provider", lazy="dynamic")
+    services = relationship("Service", back_populates="provider", lazy="dynamic")
     
     def __repr__(self):
         return f"<Provider(id={self.id}, name='{self.name}')>"

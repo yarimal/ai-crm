@@ -9,6 +9,7 @@ from app.models.provider import Provider
 from app.models.client import Client
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.blocked_time import BlockedTime
+from app.models.service import Service
 
 
 def _make_aware(dt: datetime) -> datetime:
@@ -65,14 +66,26 @@ def create_appointment(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
         if conflict:
             return {"success": False, "error": f"{provider.get_display_name()} already has an appointment at this time"}
 
+        # Get service if provided
+        service = None
+        revenue = None
+        service_name = ""
+        if args.get("service_id"):
+            service = db.query(Service).filter(Service.id == args.get("service_id")).first()
+            if service:
+                revenue = service.price
+                service_name = f" - {service.name}"
+
         # Create appointment
         appointment = Appointment(
             provider_id=provider_id,
             client_id=client_id,
+            service_id=args.get("service_id"),
             start_time=start_dt,
             end_time=end_dt,
             title=f"{client.name}",
             notes=notes,
+            revenue=revenue,
             color=provider.color
         )
 
@@ -85,7 +98,7 @@ def create_appointment(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
         return {
             "success": True,
-            "message": f"✅ Booked! {client.name} with {provider.get_display_name()}\n📅 {day_name}, {formatted_date} at {start_time}"
+            "message": f"✅ Booked! {client.name} with {provider.get_display_name()}{service_name}\n📅 {day_name}, {formatted_date} at {start_time}"
         }
     except Exception as e:
         db.rollback()
@@ -280,7 +293,7 @@ def create_client(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
         # Check if client exists
         existing = db.query(Client).filter(Client.name == name).first()
         if existing:
-            return {"success": False, "error": f"Client '{name}' already exists [ID: {existing.id}]"}
+            return {"success": False, "error": f"Client '{name}' already exists"}
 
         # Create client
         client = Client(
@@ -294,7 +307,7 @@ def create_client(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
         return {
             "success": True,
-            "message": f"✅ Created client: {name} [ID: {client.id}]"
+            "message": f"✅ Created client: {name}"
         }
     except Exception as e:
         db.rollback()
