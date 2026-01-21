@@ -68,7 +68,7 @@ def _build_clients_context(db: Session) -> str:
 
 
 def _build_services_context(db: Session) -> str:
-    """Build services section of context"""
+    """Build services section of context with provider mapping"""
     services = db.query(Service).filter(Service.is_active == True).all()
 
     text = "\nSERVICES:\n"
@@ -81,6 +81,13 @@ def _build_services_context(db: Session) -> str:
                 text += f", {duration_str}"
             if s.description:
                 text += f" - {s.description}"
+
+            # Add provider information if available
+            if s.provider_id:
+                provider = db.query(Provider).filter(Provider.id == s.provider_id).first()
+                if provider:
+                    text += f" (Provider: {provider.get_display_name()})"
+
             text += "\n"
     else:
         text += "- No services available\n"

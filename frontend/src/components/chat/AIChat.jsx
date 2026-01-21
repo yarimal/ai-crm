@@ -241,20 +241,71 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
   };
 
   const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
+  // Parse service options from AI message
+  const parseServices = (content) => {
+    const services = [];
+
+    // Check if this is a service selection prompt
+    const isServicePrompt = content.toLowerCase().includes('would you like to add a service') ||
+                           content.toLowerCase().includes('available:');
+
+    if (!isServicePrompt) return services;
+
+    // Match multiple patterns:
+    // 1. "Consultation [ID: uuid] - $20.00, 30 min"
+    // 2. "Visit (Prof. Levy) - $30.00"
+    // 3. "'Visit' [ID: uuid] for $30.00, which is 30 minutes"
+
+    // Split by comma to handle multiple services in one line
+    const parts = content.split(',');
+
+    for (const part of parts) {
+      // Match: "ServiceName [ID: uuid] - $price, duration min" or "ServiceName (Provider) - $price"
+      const match = part.match(/(\w+(?:\s+\w+)?)\s*(?:\([^)]+\))?\s*(?:\[ID:\s*([a-f0-9-]+)\])?\s*-\s*\$?([\d.]+)(?:,?\s*(\d+)\s*min)?/i);
+
+      if (match) {
+        const name = match[1].trim();
+        const id = match[2] || null;
+        const price = match[3];
+        const duration = match[4] || null;
+
+        // Only add if we have at least name and price
+        if (name && price) {
+          services.push({ name, id, price, duration });
+        }
+      }
+    }
+
+    return services;
+  };
+
+  const handleServiceSelect = (serviceName) => {
+    sendMessage(serviceName);
+  };
+
+  const handleSkipService = () => {
+    sendMessage('no');
+  };
+
   const formatContent = (content) => {
-    return content.split('\n').map((line, i) => (
-      <React.Fragment key={i}>
-        {line}
-        {i < content.split('\n').length - 1 && <br />}
-      </React.Fragment>
-    ));
+    return content.split('\n').map((line, i) => {
+      // Hide [ID: uuid] from display but keep for parsing
+      const displayLine = line.replace(/\[ID:\s*[a-f0-9-]+\]/gi, '').trim();
+
+      return (
+        <React.Fragment key={i}>
+          {displayLine}
+          {i < content.split('\n').length - 1 && <br />}
+        </React.Fragment>
+      );
+    });
   };
 
   if (!isOpen) return null;
@@ -337,6 +388,39 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
               <div className={styles.messageText}>
                 {formatContent(message.content)}
               </div>
+
+              {/* Service Selection Buttons */}
+              {message.type === 'ai' && (() => {
+                const services = parseServices(message.content);
+                if (services.length > 0) {
+                  return (
+                    <div className={styles.serviceButtons}>
+                      {services.map((service) => (
+                        <button
+                          key={service.id}
+                          className={styles.serviceButton}
+                          onClick={() => handleServiceSelect(service.name)}
+                        >
+                          <div className={styles.serviceName}>{service.name}</div>
+                          <div className={styles.serviceDetails}>
+                            {service.price && `$${service.price}`}
+                            {service.price && service.duration && ' • '}
+                            {service.duration && `${service.duration} min`}
+                          </div>
+                        </button>
+                      ))}
+                      <button
+                        className={styles.skipButton}
+                        onClick={handleSkipService}
+                      >
+                        Skip / No service
+                      </button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               <span className={styles.messageTime}>
                 {formatTime(message.timestamp)}
               </span>
