@@ -56,6 +56,7 @@ function App() {
             onEventsLoaded={handleEventsLoaded}
             eventToEdit={eventToEdit}
             onEditComplete={handleEditComplete}
+            sidebarCollapsed={sidebarCollapsed}
           />
         );
     }

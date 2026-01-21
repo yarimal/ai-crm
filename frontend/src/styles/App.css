@@ -57,3 +57,30 @@ body {
     flex-direction: column;
   }
 }
+/* Move calendar navigation buttons to the right */
+.fc-toolbar-chunk:first-child {
+  margin-left: 10px;
+}
+/* Remove the min-width and make calendar fully responsive */
+.fc {
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.fc .fc-view-harness {
+  width: 100% !important;
+  transition: all 0.2s ease;
+}
+
+/* Ensure calendar table fits container */
+.fc .fc-scrollgrid {
+  width: 100% !important;
+  transition: all 0.2s ease;
+}
+
+.fc .fc-col-header-cell,
+.fc .fc-daygrid-day {
+  transition: all 0.2s ease;
+}
+
+

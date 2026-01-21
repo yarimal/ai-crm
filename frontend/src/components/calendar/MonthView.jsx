@@ -1,13 +1,47 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 
-export default function MonthView({ 
-  events, 
-  onDateClick, 
-  onEventClick 
+export default function MonthView({
+  events,
+  onDateClick,
+  onEventClick,
+  sidebarCollapsed
 }) {
+  const calendarRef = useRef(null);
+
+  // Force calendar to resize when sidebar state changes
+  useEffect(() => {
+    // Trigger immediately for instant response
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      calendarApi.updateSize();
+    }
+
+    // Also trigger after animation completes to ensure accuracy
+    const timer = setTimeout(() => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.updateSize();
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [sidebarCollapsed]);
+
+  // Also handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.updateSize();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const renderEventContent = (eventInfo) => {
     return (
       <div className="fc-custom-event">
@@ -19,6 +53,7 @@ export default function MonthView({
 
   return (
     <FullCalendar
+      ref={calendarRef}
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"
       headerToolbar={{

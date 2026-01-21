@@ -56,7 +56,7 @@ const blockedTimeService = {
   }
 };
 
-export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, onEditComplete }) {
+export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, onEditComplete, sidebarCollapsed }) {
   const [currentView, setCurrentView] = useState('month');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -378,10 +378,11 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {currentView === 'month' ? (
           <>
-            <MonthView 
+            <MonthView
               events={calendarEvents}
               onDateClick={handleDateClick}
               onEventClick={handleEventClick}
+              sidebarCollapsed={sidebarCollapsed}
             />
             <EventModal 
               isOpen={isModalOpen} 
