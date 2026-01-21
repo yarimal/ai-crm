@@ -193,10 +193,11 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      
-      // Speak the response
+
+      // Speak the response (remove IDs before speaking)
       if (voiceEnabled) {
-        speak(aiMessage.content);
+        const textToSpeak = aiMessage.content.replace(/\[ID:\s*[a-f0-9-]+\]/gi, '');
+        speak(textToSpeak);
       }
 
       // Notify parent if appointment was created/modified
@@ -258,28 +259,22 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
 
     if (!isServicePrompt) return services;
 
-    // Match multiple patterns:
-    // 1. "Consultation [ID: uuid] - $20.00, 30 min"
-    // 2. "Visit (Prof. Levy) - $30.00"
-    // 3. "'Visit' [ID: uuid] for $30.00, which is 30 minutes"
+    // Split by lines and look for bullet points or service entries
+    const lines = content.split('\n');
 
-    // Split by comma to handle multiple services in one line
-    const parts = content.split(',');
-
-    for (const part of parts) {
-      // Match: "ServiceName [ID: uuid] - $price, duration min" or "ServiceName (Provider) - $price"
-      const match = part.match(/(\w+(?:\s+\w+)?)\s*(?:\([^)]+\))?\s*(?:\[ID:\s*([a-f0-9-]+)\])?\s*-\s*\$?([\d.]+)(?:,?\s*(\d+)\s*min)?/i);
+    for (const line of lines) {
+      // Match patterns like:
+      // "• Visit - $20.00 (30 min) [ID: uuid]"
+      // "• Consultation - $30.00 (30 min) [ID: uuid]"
+      const match = line.match(/[•\-]\s*(\w+(?:\s+\w+)?)\s*-\s*\$?([\d.]+)\s*(?:\((\d+)\s*min\))?\s*\[ID:\s*([a-f0-9-]+)\]/i);
 
       if (match) {
-        const name = match[1].trim();
-        const id = match[2] || null;
-        const price = match[3];
-        const duration = match[4] || null;
-
-        // Only add if we have at least name and price
-        if (name && price) {
-          services.push({ name, id, price, duration });
-        }
+        services.push({
+          name: match[1].trim(),
+          price: match[2],
+          duration: match[3] || null,
+          id: match[4]
+        });
       }
     }
 
