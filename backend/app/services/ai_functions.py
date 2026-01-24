@@ -95,10 +95,11 @@ def create_appointment(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
         # Format nicely
         day_name = start_dt.strftime('%A')
         formatted_date = start_dt.strftime('%B %d')
+        formatted_time = start_dt.strftime('%-I:%M %p')  # 3:00 PM format
 
         return {
             "success": True,
-            "message": f"✅ Booked! {client.name} with {provider.get_display_name()}{service_name}\n📅 {day_name}, {formatted_date} at {start_time}"
+            "message": f"✅ Booked! {client.name} with {provider.get_display_name()}{service_name}\n📅 {day_name}, {formatted_date} at {formatted_time}"
         }
     except Exception as e:
         db.rollback()
@@ -314,6 +315,79 @@ def create_client(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 
+def create_provider(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
+    """Create a new provider"""
+    try:
+        name = args.get("name")
+        title = args.get("title", "")
+        specialty = args.get("specialty", "")
+        email = args.get("email", "")
+        phone = args.get("phone", "")
+        working_hours = args.get("working_hours", "09:00-17:00")
+
+        # Smart name/title handling
+        import re
+
+        # Check if name has a prefix like "Dr.", "Prof.", etc.
+        has_prefix = bool(re.match(r'^(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.)\s+', name))
+
+        if has_prefix:
+            # Name already has prefix (e.g., "Dr. Cohen")
+            final_name = name
+            final_title = None  # Don't duplicate the prefix in get_display_name()
+
+            # If no title was provided, infer it from the prefix
+            if not title:
+                if name.startswith("Dr."):
+                    title = "Doctor"
+                elif name.startswith("Prof."):
+                    title = "Professor"
+                else:
+                    title = "Provider"
+        else:
+            # No prefix in name, use title as intended
+            final_name = name
+            final_title = title if title else "Provider"
+
+        # Check if active provider exists
+        existing = db.query(Provider).filter(
+            Provider.name == final_name,
+            Provider.is_active == True
+        ).first()
+        if existing:
+            return {"success": False, "error": f"Provider '{final_name}' already exists"}
+
+        # Generate a color for the provider (simple hash-based color)
+        import hashlib
+        color_hash = int(hashlib.md5(final_name.encode()).hexdigest()[:6], 16)
+        color = f"#{color_hash % 0xFFFFFF:06x}"
+
+        # Create provider
+        provider = Provider(
+            name=final_name,
+            title=final_title,
+            specialty=specialty,
+            email=email,
+            phone=phone,
+            working_hours=working_hours,
+            color=color
+        )
+
+        db.add(provider)
+        db.commit()
+
+        # Build success message
+        specialty_text = f" - {specialty}" if specialty else ""
+        display_title = title if title else ""
+        return {
+            "success": True,
+            "message": f"✅ Created provider: {final_name} ({display_title}{specialty_text})"
+        }
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "error": str(e)}
+
+
 def search_clients(args: Dict[str, Any], db: Session) -> Dict[str, Any]:
     """Search for clients"""
     try:
@@ -412,6 +486,7 @@ FUNCTION_HANDLERS = {
     "check_availability": check_availability,
     "cancel_appointment": cancel_appointment,
     "create_client": create_client,
+    "create_provider": create_provider,
     "search_clients": search_clients,
     "get_provider_schedule": get_provider_schedule,
 }

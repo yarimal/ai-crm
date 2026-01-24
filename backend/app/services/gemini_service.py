@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 SCHEDULING_TOOLS = [
     {
         "name": "create_appointment",
-        "description": "Book a new appointment for a client with a provider (doctor/staff). IMPORTANT: Before calling this function, ask the user if they want to add a service from the SERVICES list. Show available service options and let them choose or skip. Use IDs from the context.",
+        "description": "Book a new appointment for a client with a provider (doctor/staff). IMPORTANT: Before calling this function, ask the user if they want to add a service from the SERVICES list. Show available service options with buttons/numbers and let them choose or skip. If user says 'no', 'skip', 'none', 'without service', or provides an empty response, proceed WITHOUT a service_id. Use IDs from the context.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -143,6 +143,40 @@ SCHEDULING_TOOLS = [
         }
     },
     {
+        "name": "create_provider",
+        "description": "REQUIRED function to create/add a new provider/doctor/staff member. MUST be called when user says: 'create provider', 'add provider', 'new provider', 'add doctor', 'new doctor', 'add staff'. This is the ONLY way to add providers to the system.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Provider's full name (e.g., 'Dr. Smith', 'John Doe')"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Provider's professional title/role (e.g., 'Doctor', 'Dentist', 'Therapist', 'Nurse'). OPTIONAL - if the name includes Dr./Prof., you can infer 'Doctor' as the title. If user doesn't specify and name has no prefix, default to 'Provider'."
+                },
+                "specialty": {
+                    "type": "string",
+                    "description": "Provider's specialty or area of expertise (e.g., 'Cardiology', 'Pediatrics', 'Orthodontics', 'Physical Therapy'). Optional."
+                },
+                "phone": {
+                    "type": "string",
+                    "description": "Provider's phone number (optional)"
+                },
+                "email": {
+                    "type": "string",
+                    "description": "Provider's email address (optional)"
+                },
+                "working_hours": {
+                    "type": "string",
+                    "description": "Working hours in format 'HH:MM-HH:MM' (e.g., '09:00-17:00'). Optional, defaults to 09:00-17:00"
+                }
+            },
+            "required": ["name"]
+        }
+    },
+    {
         "name": "search_clients",
         "description": "Search for existing clients by name or phone.",
         "parameters": {
@@ -230,11 +264,8 @@ YOUR CAPABILITIES:
 
 SERVICES - PROACTIVE RECOMMENDATION:
 - When booking appointments, ALWAYS ask the user if they want to add a specific service
-- ONLY show services that belong to the specific provider (check Provider field in SERVICES list)
-- Format service options with IDs at the END (less visible to user):
-  * "• ServiceName - $price (duration min) [ID: uuid]"
-  * Example: "• Consultation - $20.00 (30 min) [ID: abc-123]"
-  * Put each service on a new line with bullet point
+- Show available services with their full details including IDs, prices, and duration
+- IMPORTANT: Use bullet points (•) in this EXACT format: "• Visit - $30.00 (30 min) [ID: abc-123]"
 - Services have prices and durations that are automatically tracked
 - If the user mentions a service name, match it to the SERVICES list and use the service_id
 - If user says "yes" or mentions a service, use the service_id from SERVICES list

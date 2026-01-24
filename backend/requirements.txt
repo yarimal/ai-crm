@@ -18,6 +18,9 @@ httpx==0.26.0
 # Google Gemini AI (new SDK)
 google-genai>=1.0.0
 
+# Audio processing
+pydub==0.25.1
+
 # CORS
 python-multipart==0.0.6
 

@@ -97,53 +97,63 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
     }
   };
 
-  // Text-to-speech
-  const speak = (text) => {
-    if (!speechSynthesis || !voiceEnabled) return;
-    
-    // Cancel any ongoing speech
-    speechSynthesis.cancel();
-    
-    // Clean text (remove emojis and markdown)
-    const cleanText = text
-      .replace(/[*_~`#]/g, '')
-      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
-      .replace(/•/g, ',')
-      .replace(/\n+/g, '. ')
-      .trim();
-    
-    if (!cleanText) return;
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-    
-    // Try to get a good voice
-    const voices = speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => 
-      v.name.includes('Google') || 
-      v.name.includes('Samantha') ||
-      v.name.includes('Microsoft')
-    ) || voices.find(v => v.lang.startsWith('en'));
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+  // Text-to-speech - play base64 WAV audio
+  const speak = (audioData, audioMimeType) => {
+    if (!audioData || !voiceEnabled) {
+      return;
     }
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    try {
+      // Stop any currently playing audio
+      stopSpeaking();
 
-    speechSynthesis.speak(utterance);
+      // Decode base64 to binary
+      const binaryString = atob(audioData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // Create blob from WAV bytes
+      const blob = new Blob([bytes], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(blob);
+
+      // Create and play audio
+      const audio = new Audio(audioUrl);
+      window.currentAudio = audio;
+
+      audio.onplay = () => {
+        setIsSpeaking(true);
+      };
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        window.currentAudio = null;
+      };
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        window.currentAudio = null;
+      };
+
+      audio.play().catch(err => {
+        console.error('Failed to play audio:', err);
+      });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsSpeaking(false);
+    }
   };
 
   // Stop speaking
   const stopSpeaking = () => {
-    if (speechSynthesis) {
-      speechSynthesis.cancel();
-      setIsSpeaking(false);
+    if (window.currentAudio) {
+      window.currentAudio.pause();
+      window.currentAudio.currentTime = 0;
+      window.currentAudio = null;
     }
+    setIsSpeaking(false);
   };
 
   const sendMessage = async (messageText = inputValue) => {
@@ -189,15 +199,16 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
         id: data.aiMessage?.id || Date.now() + 1,
         type: 'ai',
         content: data.aiMessage?.content || 'Done!',
-        timestamp: new Date(data.aiMessage?.createdAt || Date.now())
+        timestamp: new Date(data.aiMessage?.createdAt || Date.now()),
+        audioData: data.aiMessage?.audioData,
+        audioMimeType: data.aiMessage?.audioMimeType
       };
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Speak the response (remove IDs before speaking)
-      if (voiceEnabled) {
-        const textToSpeak = aiMessage.content.replace(/\[ID:\s*[a-f0-9-]+\]/gi, '');
-        speak(textToSpeak);
+      // Auto-play TTS audio if available
+      if (voiceEnabled && aiMessage.audioData) {
+        speak(aiMessage.audioData, aiMessage.audioMimeType);
       }
 
       // Notify parent if appointment was created/modified
@@ -421,11 +432,12 @@ export default function AIChat({ isOpen, onClose, onAppointmentChange, onClientC
               </span>
             </div>
             {/* Replay button for AI messages */}
-            {message.type === 'ai' && message.id !== 'welcome' && voiceEnabled && (
-              <button 
+            {message.type === 'ai' && message.id !== 'welcome' && voiceEnabled && message.audioData && (
+              <button
                 className={styles.replayBtn}
-                onClick={() => speak(message.content)}
+                onClick={() => speak(message.audioData, message.audioMimeType)}
                 title="Listen again"
+                disabled={isSpeaking}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />

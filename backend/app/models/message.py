@@ -32,7 +32,11 @@ class Message(Base):
     # Optional metadata for AI responses
     model_used = Column(String(100), nullable=True)  # e.g., "gemini-pro"
     tokens_used = Column(String(50), nullable=True)
-    
+
+    # Audio data for TTS
+    audio_data = Column(Text, nullable=True)  # Base64 encoded audio
+    audio_mime_type = Column(String(50), nullable=True)  # e.g., "audio/mp3"
+
     # Metadata
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     
@@ -51,5 +55,7 @@ class Message(Base):
             "type": self.message_type.value,
             "modelUsed": self.model_used,
             "tokensUsed": self.tokens_used,
+            "audioData": self.audio_data,
+            "audioMimeType": self.audio_mime_type,
             "timestamp": self.created_at.isoformat()
         }

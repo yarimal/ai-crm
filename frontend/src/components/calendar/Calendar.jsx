@@ -175,7 +175,13 @@ export default function Calendar({ refreshTrigger, onEventsLoaded, eventToEdit, 
         description: eventToEdit.notes || eventToEdit.description || '',
         start: eventToEdit.start,
         end: eventToEdit.end,
-        color: eventToEdit.color || '#1a73e8'
+        color: eventToEdit.color || '#1a73e8',
+        providerId: eventToEdit.providerId,
+        clientId: eventToEdit.clientId,
+        clientName: eventToEdit.clientName,
+        serviceId: eventToEdit.serviceId,
+        status: eventToEdit.status,
+        notes: eventToEdit.notes
       };
       setEditingEvent(eventData);
       setIsModalOpen(true);

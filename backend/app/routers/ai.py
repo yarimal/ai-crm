@@ -13,6 +13,7 @@ from app.schemas.message import AIMessageRequest
 from app.services.gemini_service import GeminiService
 from app.services.ai_context import build_context_data
 from app.services.ai_functions import execute_function
+from app.services.tts_service import TTSService
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -185,12 +186,19 @@ def _build_response_text(ai_response: dict, function_results: list) -> str:
 
 
 def _save_ai_message(chat_id: str, content: str, ai_response: dict, db: Session) -> Message:
-    """Save AI message to database"""
+    """Save AI message to database with TTS audio"""
+
+    # Generate audio using Gemini TTS
+    tts = TTSService()
+    audio_result = tts.generate_speech(content)
+
     ai_message = Message(
         chat_id=chat_id,
         content=content,
         message_type=MessageType.AI,
-        model_used=ai_response.get("model", "gemini-2.5-flash")
+        model_used=ai_response.get("model", "gemini-2.5-flash"),
+        audio_data=audio_result.get("audio_data") if audio_result else None,  # Base64 WAV data
+        audio_mime_type=audio_result.get("mime_type") if audio_result else None
     )
     db.add(ai_message)
     db.commit()
