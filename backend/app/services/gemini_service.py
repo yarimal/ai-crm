@@ -6,6 +6,7 @@ from google.genai import types
 from typing import List, Dict, Optional
 import os
 from datetime import datetime, timedelta
+import hashlib
 
 
 # Function definitions for scheduling
@@ -200,58 +201,12 @@ class GeminiService:
         api_key = os.getenv("GEMINI_API_KEY")
         self.client = genai.Client(api_key=api_key) if api_key else None
         self.model_name = "gemini-2.5-flash"
-    
-    def _get_date_context(self) -> str:
-        """Get comprehensive date context for AI"""
-        today = datetime.now()
-        
-        # Build calendar for this week and next week
-        lines = []
-        lines.append(f"=== DATE REFERENCE ===")
-        lines.append(f"TODAY: {today.strftime('%A, %B %d, %Y')} ({today.strftime('%Y-%m-%d')})")
-        lines.append(f"CURRENT TIME: {today.strftime('%H:%M')}")
-        lines.append("")
-        
-        # This week and next 2 weeks calendar
-        lines.append("UPCOMING DATES:")
-        for i in range(14):  # Next 14 days
-            date = today + timedelta(days=i)
-            day_name = date.strftime('%A')
-            date_str = date.strftime('%Y-%m-%d')
-            display = date.strftime('%B %d')
-            
-            label = ""
-            if i == 0:
-                label = " (TODAY)"
-            elif i == 1:
-                label = " (TOMORROW)"
-            elif i < 7:
-                label = " (THIS WEEK)"
-            else:
-                label = " (NEXT WEEK)"
-            
-            lines.append(f"  {day_name}: {date_str} ({display}){label}")
-        
-        lines.append("")
-        lines.append("DATE CALCULATION RULES:")
-        lines.append("- 'next Sunday' = the NEAREST upcoming Sunday from today")
-        lines.append("- 'this Monday' = Monday of current week")
-        lines.append("- 'next week Monday' = Monday of following week")
-        lines.append("- Use the dates above to find the correct YYYY-MM-DD")
-        lines.append("=== END DATE REFERENCE ===")
-        
-        return "\n".join(lines)
-    
-    def _build_system_prompt(self, context_data: Optional[str] = None) -> str:
-        base_prompt = f"""You are a functional AI assistant for a clinic/office scheduling system. You MUST use the provided functions to perform actions.
+
+    def _get_static_instructions(self) -> str:
+        """Get static instructions that will be cached (no dynamic data)"""
+        return """You are a functional AI assistant for a clinic/office scheduling system. You MUST use the provided functions to perform actions.
 
 CRITICAL: You can only make changes by calling functions. You CANNOT create, modify, or delete anything without calling the appropriate function.
-
-{self._get_date_context()}
-
-=== CURRENT DATA ===
-{context_data if context_data else "No data available."}
-=== END DATA ===
 
 YOUR CAPABILITIES:
 1. BOOK APPOINTMENTS: Use create_appointment with provider_id, client_id, date, start_time, end_time, and optionally service_id from SERVICES list
@@ -261,6 +216,7 @@ YOUR CAPABILITIES:
 5. CANCEL: Use cancel_appointment with the appointment ID
 6. ADD CLIENTS: ALWAYS use create_client function when user wants to add/create a new client/patient/account
 7. SEARCH CLIENTS: Use search_clients to find existing clients
+8. ADD PROVIDERS: Use create_provider function to add new doctors/staff members
 
 SERVICES - PROACTIVE RECOMMENDATION:
 - When booking appointments, ALWAYS ask the user if they want to add a specific service
@@ -326,36 +282,19 @@ If the user asks you to:
 - Cancel an appointment → YOU MUST call cancel_appointment function
 - Check availability → YOU MUST call check_availability function
 - Search clients → YOU MUST call search_clients function
+- Create/add a provider → YOU MUST call create_provider function
 
 You have NO other way to perform these actions. Only text responses that don't involve actions can skip function calls."""
-        
-        return base_prompt
-    
-    async def generate_response(
-        self,
-        message: str,
-        history: Optional[List[Dict]] = None,
-        context_data: Optional[str] = None
-    ) -> Dict:
-        """Generate response with function calling"""
-        
+
+    def _create_cache(self) -> Optional[str]:
+        """Create a context cache with static instructions and tools"""
         if not self.client:
-            return self._get_simulated_response(message)
-        
+            return None
+
         try:
-            system_prompt = self._build_system_prompt(context_data)
-            
-            # Build conversation
-            conversation = system_prompt + "\n\n"
-            
-            if history:
-                for msg in history[-15:]:  # Keep more history for better context
-                    role = "User" if msg["role"] == "user" else "Assistant"
-                    conversation += f"{role}: {msg['text']}\n"
-            
-            conversation += f"User: {message}\nAssistant:"
-            
-            # Create tools
+            static_content = self._get_static_instructions()
+
+            # Create tools for the cache
             tools = [types.Tool(function_declarations=[
                 types.FunctionDeclaration(
                     name=tool["name"],
@@ -363,19 +302,149 @@ You have NO other way to perform these actions. Only text responses that don't i
                     parameters=tool["parameters"]
                 ) for tool in SCHEDULING_TOOLS
             ])]
-            
-            # Generate with function calling mode
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=conversation,
-                config=types.GenerateContentConfig(
-                    tools=tools,
+
+            cache = self.client.caches.create(
+                model=f'models/{self.model_name}',
+                config=types.CreateCachedContentConfig(
+                    display_name=f'scheduling_cache_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
+                    system_instruction=static_content,
+                    tools=tools,  # Include tools in the cache
                     tool_config=types.ToolConfig(
                         function_calling_config=types.FunctionCallingConfig(
                             mode="AUTO"
                         )
+                    ),
+                    ttl="3600s",  # 1 hour cache
+                )
+            )
+
+            print(f"Created cache: {cache.name}")
+            return cache.name
+
+        except Exception as e:
+            print(f"Failed to create cache: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def _is_cache_valid(self, cache_name: Optional[str]) -> bool:
+        """Check if cache still exists and is valid"""
+        if not cache_name or not self.client:
+            return False
+
+        try:
+            cache = self.client.caches.get(name=cache_name)
+            return cache is not None
+        except Exception:
+            return False
+
+    def _get_date_context(self) -> str:
+        """Get comprehensive date context for AI"""
+        today = datetime.now()
+        
+        # Build calendar for this week and next week
+        lines = []
+        lines.append(f"=== DATE REFERENCE ===")
+        lines.append(f"TODAY: {today.strftime('%A, %B %d, %Y')} ({today.strftime('%Y-%m-%d')})")
+        lines.append(f"CURRENT TIME: {today.strftime('%H:%M')}")
+        lines.append("")
+        
+        # This week and next 2 weeks calendar
+        lines.append("UPCOMING DATES:")
+        for i in range(14):  # Next 14 days
+            date = today + timedelta(days=i)
+            day_name = date.strftime('%A')
+            date_str = date.strftime('%Y-%m-%d')
+            display = date.strftime('%B %d')
+            
+            label = ""
+            if i == 0:
+                label = " (TODAY)"
+            elif i == 1:
+                label = " (TOMORROW)"
+            elif i < 7:
+                label = " (THIS WEEK)"
+            else:
+                label = " (NEXT WEEK)"
+            
+            lines.append(f"  {day_name}: {date_str} ({display}){label}")
+        
+        lines.append("")
+        lines.append("DATE CALCULATION RULES:")
+        lines.append("- 'next Sunday' = the NEAREST upcoming Sunday from today")
+        lines.append("- 'this Monday' = Monday of current week")
+        lines.append("- 'next week Monday' = Monday of following week")
+        lines.append("- Use the dates above to find the correct YYYY-MM-DD")
+        lines.append("=== END DATE REFERENCE ===")
+        
+        return "\n".join(lines)
+    
+    def _build_dynamic_context(self, context_data: Optional[str] = None) -> str:
+        """Build only dynamic context data (date + current data)"""
+        return f"""{self._get_date_context()}
+
+=== CURRENT DATA ===
+{context_data if context_data else "No data available."}
+=== END DATA ==="""
+    
+    async def generate_response(
+        self,
+        message: str,
+        history: Optional[List[Dict]] = None,
+        context_data: Optional[str] = None,
+        cache_name: Optional[str] = None
+    ) -> Dict:
+        """Generate response with function calling and context caching"""
+
+        if not self.client:
+            return self._get_simulated_response(message)
+
+        try:
+            # Build only dynamic context (date + current data)
+            dynamic_context = self._build_dynamic_context(context_data)
+
+            # Build conversation history
+            conversation_text = ""
+            if history:
+                for msg in history[-15:]:  # Keep more history for better context
+                    role = "User" if msg["role"] == "user" else "Assistant"
+                    conversation_text += f"{role}: {msg['text']}\n"
+
+            conversation_text += f"User: {message}\nAssistant:"
+
+            # Combine dynamic context with conversation
+            full_content = f"{dynamic_context}\n\n{conversation_text}"
+
+            # Build config based on whether we're using cache
+            config_params = {}
+
+            # Use cached content if available and valid
+            if cache_name and self._is_cache_valid(cache_name):
+                # When using cache, tools are already in the cache
+                config_params["cached_content"] = cache_name
+                print(f"🎯 Using cached instructions (faster response!)")
+            else:
+                # No cache - include tools directly
+                tools = [types.Tool(function_declarations=[
+                    types.FunctionDeclaration(
+                        name=tool["name"],
+                        description=tool["description"],
+                        parameters=tool["parameters"]
+                    ) for tool in SCHEDULING_TOOLS
+                ])]
+
+                config_params["tools"] = tools
+                config_params["tool_config"] = types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(
+                        mode="AUTO"
                     )
                 )
+
+            # Generate with function calling mode
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_content,
+                config=types.GenerateContentConfig(**config_params)
             )
             
             # Parse response

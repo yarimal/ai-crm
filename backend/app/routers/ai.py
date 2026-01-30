@@ -50,11 +50,27 @@ async def chat_with_ai(
         # Get conversation history
         conversation_history = _build_conversation_history(chat.id, db)
 
-        # Get AI response
+        # Create or validate cache
+        cache_name = chat.cache_name
+        if not cache_name or not gemini._is_cache_valid(cache_name):
+            # Create new cache with static instructions
+            print(f"Creating new cache for chat {chat.id}...")
+            cache_name = gemini._create_cache()
+            if cache_name:
+                chat.cache_name = cache_name
+                db.commit()
+                print(f"Cache created: {cache_name}")
+            else:
+                print("Failed to create cache, running without caching")
+        else:
+            print(f"Reusing cached context: {cache_name}")
+
+        # Get AI response with cached context
         ai_response = await gemini.generate_response(
             message=request.message,
             history=conversation_history,
-            context_data=context_data
+            context_data=context_data,
+            cache_name=cache_name
         )
 
         # Execute function calls if any
